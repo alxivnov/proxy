@@ -1,3 +1,8 @@
+.DS_Store
+.vscode
+temp/*
+proxy/api
+
 # Logs
 logs
 *.log

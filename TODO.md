@@ -1,0 +1,3 @@
+- [x] Stream videos w/ Range header: CURLOPT_HEADERFUNCTION
+- [x] Follow redirects w/ cookies: redir=0|1
+- [ ] Support POSTing request object
