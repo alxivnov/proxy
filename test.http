@@ -20,6 +20,9 @@ Range: bytes=2-5
 ### gzip
 GET http://localhost:9000/proxy?url=https://httpbin.org/gzip
 
-### redirect
-GET http://localhost:9000/proxy?log&url=https://httpbin.org/redirect-to?url=https://httpbin.org/get
-
+### redirect: absolute
+GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to?url=https://httpbun.com/get
+### redirect: relative
+GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to/?url=./get
+### redirect: from origin
+GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to?url=/get

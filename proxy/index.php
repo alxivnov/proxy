@@ -54,7 +54,20 @@
 		$header = $headerData;
 		if (stripos($headerData, 'Location: ') === 0) {
 			// $header = 'X-'.$headerData;
-			$header = 'Location: ?url='.substr($headerData, 10);
+			$location = substr($headerData, 10);
+			if (strpos($location, '/') === 0 || strpos($location, '.') === 0) {
+				$url = curl_getinfo($curlHandle, CURLINFO_EFFECTIVE_URL);
+				$parts = parse_url($url);
+				$root = $parts['scheme'].'://'.$parts['host'];
+				if (strpos($location, '.') === 0) {
+					$root .= $parts['path'];
+					if (substr($root, -1) !== '/') {
+						$root .= '/';
+					}
+				}
+				$location = $root.$location;
+			}
+			$header = 'Location: ?url='.$location;
 		}
 		// if ($i === 0) {
 		// 	// Disable HTTP/2 for Safari + php -S compatibility
