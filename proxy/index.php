@@ -19,14 +19,17 @@
 		file_put_contents('php://stdout', PHP_EOL);
 	}
 
-	function curl($url, $header, $body, $headerfunction, $log) {
+	function curl($url, $header, $body, $headerfunction = false, $log = false) {
 		$ch = curl_init();
 
 		curl_setopt_array($ch, array(
 			CURLOPT_URL						=> $url,			// the url to fetch
 			CURLOPT_HTTPHEADER				=> $header,			// HTTP header fields to set
-			CURLOPT_HEADERFUNCTION			=> $headerfunction,	// the header data which must be written by the callback
 			CURLOPT_HTTP_TRANSFER_DECODING	=> false,			// cURL does chunked transfer decoding by default unless this option is set to 0
+			CURLOPT_TCP_KEEPALIVE			=> 1,
+			CURLOPT_HEADERFUNCTION			=> $headerfunction,	// the header data which must be written by the callback													1457.5145	1656.0673
+			// CURLOPT_HEADER					=> true,			// include the headers in the output																	1422.7085	1518.6318
+			// CURLOPT_RETURNTRANSFER			=> true,			// return the transfer as a string of the return value of curl_exec() instead of outputting it directly	1459.7092	1587.5831
 		));
 
 		if (!is_null($body)) {
@@ -44,8 +47,16 @@
 		}
 
 		$result = curl_exec($ch);
-		// $info = curl_getinfo($ch);
-		curl_close($ch);
+		// if ($result) {
+		// 	$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+		// 	$result = array(
+		// 		substr($result, 0, $header_size),
+		// 		substr($result, $header_size)
+		// 	);
+		// }
+		if (PHP_VERSION_ID < 80000) {
+			curl_close($ch);
+		}
 
 		return $result;
 	}
@@ -55,7 +66,7 @@
 		if (stripos($headerData, 'Location: ') === 0) {
 			// $header = 'X-'.$headerData;
 			$location = substr($headerData, 10);
-			if (strpos($location, '/') === 0 || strpos($location, '.') === 0) {
+			if (!is_null($curlHandle) && (strpos($location, '/') === 0 || strpos($location, '.') === 0)) {
 				$url = curl_getinfo($curlHandle, CURLINFO_EFFECTIVE_URL);
 				$parts = parse_url($url);
 				$root = $parts['scheme'].'://'.$parts['host'];
@@ -95,21 +106,21 @@
 		// stdout(curl_version());
 		// stdout($_SERVER);
 
-		$method = $_SERVER['REQUEST_METHOD'];
-		$api = array_key_value('api', $_GET);
+		// $api = array_key_value('api', $_GET);
 		$url = array_key_value('url', $_GET);
-		$host = array_key_value('host', $_GET, parse_url($url, PHP_URL_HOST));
-		$refer = array_key_value('refer', $_GET);
-		$log = array_key_exists('log', $_GET);
 
 		if ($url) {
 			$header = array(
 				// 'Acccept: */*'
 			);
 			foreach ($_SERVER as $name => $value) {
-				if ($name === 'HTTP_HOST' && $host) {
-					array_push($header, 'Host: '.$host);
+				if ($name === 'HTTP_HOST') {
+					$host = array_key_value('host', $_GET, parse_url($url, PHP_URL_HOST));
+					if ($host) {
+						array_push($header, 'Host: '.$host);
+					}
 				} else if ($name === 'HTTP_REFERER') {
+					$refer = array_key_value('refer', $_GET);
 					if ($refer) {
 						array_push($header, 'Referer: '.$refer);
 					}
@@ -118,6 +129,8 @@
 				}
 			}
 
+			$method = $_SERVER['REQUEST_METHOD'];
+			$log = array_key_exists('log', $_GET);
 			// stdout('req:', $method, $url, $header);
 
 			if ($log !== false) {
@@ -135,7 +148,8 @@
 
 			// stdout('res:', $res);
 
-			if ($res === false) {
+			if ($res === true) {
+			} else if ($res === false) {
 				header('HTTP/1.1 400 Bad Request');
 				header('Content-Type: text/plain');
 
@@ -148,6 +162,14 @@
 						// stdout('err:', $err);
 					}
 				}
+			} else if (is_string($res)) {
+				print($res);
+			} else if (is_array($res)) {
+				foreach (explode(PHP_EOL, $res[0]) as $header) {
+					headerFunction(null, $header);
+				}
+
+				print($res[1]);
 			}
 
 			if ($log !== false) {

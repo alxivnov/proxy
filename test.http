@@ -26,3 +26,7 @@ GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to?url=http
 GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to/?url=./get
 ### redirect: from origin
 GET http://localhost:9000/proxy?log&url=https://httpbun.com/redirect-to?url=/get
+
+### Etag
+GET http://localhost:9000/proxy?log&url=https://httpbun.com/etag/234
+If-None-Match: 123
